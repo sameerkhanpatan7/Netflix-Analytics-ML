@@ -1,35 +1,48 @@
 import os
-import sys
 import pandas as pd
 import pickle
 
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
 
 # ==========================================
 # PATHS
 # ==========================================
 
-BASE_DIR  = os.path.dirname(os.path.abspath(__file__))
-DATA_DIR  = os.path.join(BASE_DIR, "..", "data")
-MODEL_DIR = os.path.join(BASE_DIR, "..", "model")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-CSV_PATH  = os.path.join(DATA_DIR,  "netflix_cleaned.csv")
+DATA_DIR = os.path.join(
+    BASE_DIR,
+    "..",
+    "data"
+)
+
+MODEL_DIR = os.path.join(
+    BASE_DIR,
+    "..",
+    "model"
+)
+
+CSV_PATH = os.path.join(
+    DATA_DIR,
+    "netflix_cleaned.csv"
+)
 
 # ==========================================
 # LOAD DATA
 # ==========================================
 
 if not os.path.exists(CSV_PATH):
-    raise FileNotFoundError(f"Dataset not found at: {CSV_PATH}")
+    raise FileNotFoundError(
+        f"Dataset not found: {CSV_PATH}"
+    )
 
 df = pd.read_csv(CSV_PATH)
 
-print("Dataset Loaded Successfully")
+print("✅ Dataset Loaded")
 print("Shape:", df.shape)
 
 # ==========================================
-# FILL MISSING VALUES
+# HANDLE MISSING VALUES
 # ==========================================
 
 features = [
@@ -43,17 +56,18 @@ for feature in features:
     df[feature] = df[feature].fillna("")
 
 # ==========================================
-# CREATE COMBINED FEATURE
+# CREATE COMBINED FEATURES
 # ==========================================
 
 df["combined_features"] = (
-    df["listed_in"]    + " " + df["listed_in"]    + " " +
-    df["director"]     + " " +
-    df["cast"]         + " " +
+    df["listed_in"] + " " +
+    df["listed_in"] + " " +
+    df["director"] + " " +
+    df["cast"] + " " +
     df["description"]
 )
 
-print("Combined Features Created")
+print("✅ Combined Features Created")
 
 # ==========================================
 # TF-IDF VECTORIZATION
@@ -68,27 +82,57 @@ tfidf_matrix = vectorizer.fit_transform(
     df["combined_features"]
 )
 
-print("TF-IDF Matrix Created")
-print("TF-IDF Matrix Shape:", tfidf_matrix.shape)
+print("✅ TF-IDF Matrix Created")
+print("Shape:", tfidf_matrix.shape)
 
 # ==========================================
-# COSINE SIMILARITY
+# CREATE MODEL FOLDER
 # ==========================================
 
-similarity = cosine_similarity(tfidf_matrix)
-
-print("Similarity Matrix Created")
-print(f"Similarity Matrix Size: {sys.getsizeof(similarity) / 1e6:.1f} MB")
+os.makedirs(
+    MODEL_DIR,
+    exist_ok=True
+)
 
 # ==========================================
-# SAVE MODEL FILES
+# SAVE FILES
 # ==========================================
 
-os.makedirs(MODEL_DIR, exist_ok=True)
+pickle.dump(
+    df,
+    open(
+        os.path.join(
+            MODEL_DIR,
+            "recommender.pkl"
+        ),
+        "wb"
+    )
+)
 
-pickle.dump(df, open(os.path.join(MODEL_DIR, "recommender.pkl"), "wb"))
-pickle.dump(similarity, open(os.path.join(MODEL_DIR, "similarity.pkl"), "wb"))
+pickle.dump(
+    vectorizer,
+    open(
+        os.path.join(
+            MODEL_DIR,
+            "vectorizer.pkl"
+        ),
+        "wb"
+    )
+)
 
-print("Model Files Saved Successfully")
+pickle.dump(
+    tfidf_matrix,
+    open(
+        os.path.join(
+            MODEL_DIR,
+            "tfidf_matrix.pkl"
+        ),
+        "wb"
+    )
+)
 
-print("\nProject Training Completed")
+print("✅ recommender.pkl saved")
+print("✅ vectorizer.pkl saved")
+print("✅ tfidf_matrix.pkl saved")
+
+print("\n🎉 Training Completed Successfully")

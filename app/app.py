@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import pickle
 import os
+from sklearn.metrics.pairwise import cosine_similarity
 
 # ==========================================
 # PAGE CONFIG
@@ -57,16 +58,24 @@ def load_data():
         )
     )
 
-    similarity = pickle.load(
+    vectorizer = pickle.load(
         open(
-            os.path.join(MODEL_DIR, "similarity.pkl"),
+            os.path.join(MODEL_DIR, "vectorizer.pkl"),
             "rb"
         )
     )
 
-    return df, similarity
+    tfidf_matrix = pickle.load(
+        open(
+            os.path.join(MODEL_DIR, "tfidf_matrix.pkl"),
+            "rb"
+        )
+    )
 
-df, similarity = load_data()
+    return df, vectorizer, tfidf_matrix
+
+
+df, vectorizer, tfidf_matrix = load_data()
 
 # ==========================================
 # RECOMMEND FUNCTION
@@ -85,10 +94,13 @@ def recommend(movie_name):
 
     movie_index = matches.index[0]
 
+    similarity_scores = cosine_similarity(
+        tfidf_matrix[movie_index],
+        tfidf_matrix
+    ).flatten()
+
     distances = list(
-        enumerate(
-            similarity[movie_index]
-        )
+        enumerate(similarity_scores)
     )
 
     distances = sorted(
